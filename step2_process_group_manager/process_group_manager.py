@@ -6,12 +6,18 @@ class ProcessGroupManager:
     def __init__(self, dp_size, pp_size, tp_size):
         self.global_rank = dist.get_rank()
         self.world_size = dist.get_world_size()
+        # default value for the local rank: self.global_rank % self.world_size
         self.local_rank = int(os.environ.get("LOCAL_RANK", self.global_rank % self.world_size))
-        
+
+        # Ensure that all processes are used
         assert self.world_size == dp_size * pp_size * tp_size, f"World size ({self.world_size}) != DP ({self.dp_size}) * PP ({self.pp_size}) * TP ({self.tp_size})"
 
+
+        # A 3D tensor that encodes the mapping of all processes (ranks) in a distributed system.
         self.grid = torch.arange(self.world_size).view(dp_size, pp_size, tp_size)  # DP * PP * TP grid
+        
         # Find the position of the current process in the grid
+        # Returns [dp_rank, pp_rank, tp_rank] of the current process
         self.dp_rank, self.pp_rank, self.tp_rank = (self.grid == self.global_rank).nonzero().flatten().tolist()
 
         # Process group creation - Update indexing to match new grid order
