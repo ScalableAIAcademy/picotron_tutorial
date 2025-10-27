@@ -146,6 +146,8 @@ class ColumnParallelLinear(nn.Module):
             return
     
         # When TP > 1, Initialize master weight
+        # Since Pytorch keeps transposed weight matrices, we are doing the same
+        # This is because we are taking responsibility to manage the matrix
         master_weight = torch.empty(self.out_features, self.in_features, dtype=self.weight.dtype, requires_grad=False)
         # Calculate bound based on master weight's input dimension. U(-sqrt(k), sqrt(k))
         k = 1 / master_weight.size(1)
